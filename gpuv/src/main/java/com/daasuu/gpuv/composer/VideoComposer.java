@@ -85,7 +85,16 @@ class VideoComposer {
         decoderSurface.setFlipVertical(flipVertical);
         decoderSurface.completeParams();
 
-        decoder = configureDecoder(inputFormat, decoderSurface.getSurface());
+        try {
+            decoder = MediaCodec.createDecoderByType(inputFormat.getString(MediaFormat.KEY_MIME));
+            decoder.configure(inputFormat, decoderSurface.getSurface(), null, 0);
+        } catch (IllegalStateException ise) {
+            decoder.release();
+            decoder = configureDecoder(inputFormat, decoderSurface.getSurface());
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+
         decoder.start();
         decoderStarted = true;
         decoderInputBuffers = decoder.getInputBuffers();
