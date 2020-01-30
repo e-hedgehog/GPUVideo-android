@@ -11,6 +11,9 @@ import java.nio.ByteOrder;
 
 // Refer: https://github.com/ypresto/android-transcoder/blob/master/lib/src/main/java/net/ypresto/androidtranscoder/engine/PassThroughTrackTranscoder.java
 class AudioComposer implements IAudioComposer {
+
+    private static final int DEFAULT_BUFFER_SIZE = 1 * 1024 * 1024;
+
     private final MediaExtractor mediaExtractor;
     private final int trackIndex;
     private final MuxRender muxRender;
@@ -30,7 +33,14 @@ class AudioComposer implements IAudioComposer {
 
         actualOutputFormat = this.mediaExtractor.getTrackFormat(this.trackIndex);
         this.muxRender.setOutputFormat(this.sampleType, actualOutputFormat);
-        bufferSize = actualOutputFormat.getInteger(MediaFormat.KEY_MAX_INPUT_SIZE);
+        if (actualOutputFormat.containsKey(MediaFormat.KEY_MAX_INPUT_SIZE)) {
+            int newBufferSize = actualOutputFormat.getInteger(MediaFormat.KEY_MAX_INPUT_SIZE);
+            bufferSize = newBufferSize > bufferSize ? newBufferSize : bufferSize;
+        }
+
+        if (bufferSize < 0)
+            bufferSize = DEFAULT_BUFFER_SIZE;
+
         buffer = ByteBuffer.allocateDirect(bufferSize).order(ByteOrder.nativeOrder());
     }
 
